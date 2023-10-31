@@ -89,5 +89,3 @@ class CommentViewSet(viewsets.ModelViewSet):
         if self.request.user != instance.author:
             raise PermissionDenied()
         instance.delete()
-
-
