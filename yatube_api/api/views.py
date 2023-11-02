@@ -4,11 +4,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
 
 
+from .permissions import OwnerOrReadOnly, ReadOnly
 from .serializers import (
     PostSerializer, CommentSerializer, GroupSerializer,
     FollowSerializer)
 from posts.models import Post, Group
-from .permissions import OwnerOrReadOnly, ReadOnly
 
 
 class CreateListViewSet(mixins.CreateModelMixin,
