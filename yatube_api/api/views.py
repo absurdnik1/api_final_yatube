@@ -1,10 +1,9 @@
-from django.core.exceptions import PermissionDenied
 from rest_framework import permissions, viewsets, filters, mixins
-from django.shortcuts import get_object_or_404
 from rest_framework.pagination import LimitOffsetPagination
+from django.shortcuts import get_object_or_404
 
 
-from .permissions import OwnerOrReadOnly, ReadOnly
+from .permissions import OwnerOrReadOnly
 from .serializers import (
     PostSerializer, CommentSerializer, GroupSerializer,
     FollowSerializer)
@@ -19,7 +18,7 @@ class CreateListViewSet(mixins.CreateModelMixin,
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (OwnerOrReadOnly,)
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
@@ -27,16 +26,6 @@ class PostViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         return serializer.save(author=self.request.user)
-
-    def perform_update(self, serializer):
-        if self.request.user != serializer.instance.author:
-            raise PermissionDenied()
-        super(PostViewSet, self).perform_update(serializer)
-
-    def perform_destroy(self, instance):
-        if self.request.user != instance.author:
-            raise PermissionDenied()
-        instance.delete()
 
 
 class FollowViewSet(CreateListViewSet):
@@ -47,9 +36,6 @@ class FollowViewSet(CreateListViewSet):
 
     def get_queryset(self):
         return self.request.user.follower
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
@@ -71,14 +57,3 @@ class CommentViewSet(viewsets.ModelViewSet):
         post_id = self.kwargs['post_id']
         post = Post.objects.get(id=post_id)
         return serializer.save(author=self.request.user, post=post)
-
-    def perform_update(self, serializer):
-        super(CommentViewSet, self).perform_update(serializer)
-
-    def perform_destroy(self, instance):
-        instance.delete()
-
-    def get_permissions(self):
-        if self.action == 'retrieve':
-            return (ReadOnly(),)
-        return super().get_permissions()
